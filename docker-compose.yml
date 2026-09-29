@@ -1,0 +1,224 @@
+# =====================================================================
+# campus-recruit-ai-platform 根编排文件
+# 统一管理中间件容器与业务服务（业务服务默认注释，后续启用）
+# 数据持久化统一挂载到 ./volumes/ 目录
+# 网络统一使用 campus-network 网桥，时区统一 Asia/Shanghai
+# =====================================================================
+
+networks:
+  campus-network:
+    name: campus-network
+    driver: bridge
+
+services:
+  # ---------------------------------------------------------------
+  # MySQL 8.0.36 - 关系型数据库
+  # ---------------------------------------------------------------
+  mysql:
+    image: docker.m.daocloud.io/library/mysql:8.0.36
+    container_name: campus-mysql
+    restart: unless-stopped
+    env_file:
+      - ./docker/env/mysql.env
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./volumes/mysql/data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - campus-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p123456"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ---------------------------------------------------------------
+  # Redis 7.2.4 - 缓存与消息中间件
+  # ---------------------------------------------------------------
+  redis:
+    image: docker.m.daocloud.io/library/redis:7.2.4-alpine
+    container_name: campus-redis
+    restart: unless-stopped
+    env_file:
+      - ./docker/env/redis.env
+    command: ["redis-server", "--requirepass", "123456", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./volumes/redis/data:/data
+    networks:
+      - campus-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "123456", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------
+  # Milvus v2.3.15 单机版依赖组件
+  # etcd: 元数据存储 | minio: 对象存储
+  # ---------------------------------------------------------------
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.5
+    container_name: campus-milvus-etcd
+    restart: unless-stopped
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+      - TZ=Asia/Shanghai
+    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    volumes:
+      - ./volumes/etcd:/etcd
+    networks:
+      - campus-network
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  minio:
+    image: docker.m.daocloud.io/minio/minio:RELEASE.2023-03-20T20-16-18Z
+    container_name: campus-milvus-minio
+    restart: unless-stopped
+    env_file:
+      - ./docker/env/minio.env
+    command: minio server /minio_data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./volumes/minio:/minio_data
+    networks:
+      - campus-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # ---------------------------------------------------------------
+  # Milvus v2.3.15 单机版 - 向量数据库
+  # ---------------------------------------------------------------
+  milvus:
+    image: docker.m.daocloud.io/milvusdb/milvus:v2.3.15
+    container_name: campus-milvus
+    restart: unless-stopped
+    command: ["milvus", "run", "standalone"]
+    security_opt:
+      - seccomp:unconfined
+    env_file:
+      - ./docker/env/milvus.env
+    ports:
+      - "19530:19530"
+    volumes:
+      - ./volumes/milvus:/var/lib/milvus
+    networks:
+      - campus-network
+    depends_on:
+      etcd:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      start_period: 90s
+      timeout: 20s
+      retries: 3
+
+  # ---------------------------------------------------------------
+  # Attu v2.3.10 - Milvus 可视化工具
+  # ---------------------------------------------------------------
+  attu:
+    image: docker.m.daocloud.io/zilliz/attu:v2.3.10
+    container_name: campus-attu
+    restart: unless-stopped
+    env_file:
+      - ./docker/env/attu.env
+    ports:
+      - "8000:3000"
+    networks:
+      - campus-network
+    depends_on:
+      milvus:
+        condition: service_healthy
+
+  # =================================================================
+  # 业务服务配置
+  # 启动：docker compose up -d --build business-service ai-agent-service frontend
+  # =================================================================
+
+  # ---------------------------------------------------------------
+  # business-service - Spring Boot 业务后端服务
+  # ---------------------------------------------------------------
+  business-service:
+    build:
+      context: ./business-service
+      dockerfile: Dockerfile
+    container_name: campus-business-service
+    restart: unless-stopped
+    env_file:
+      - ./docker/env/business-service.env
+    ports:
+      - "8080:8080"
+    volumes:
+      # 简历 PDF 上传目录（与 application.yml resume.upload-dir 一致）
+      - ./volumes/resume:/app/uploads/resume
+    networks:
+      - campus-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------
+  # ai-agent-service - Python AI Agent 服务
+  # ---------------------------------------------------------------
+  ai-agent-service:
+    build:
+      context: ./ai-agent-service
+      dockerfile: Dockerfile
+    container_name: campus-ai-agent-service
+    restart: unless-stopped
+    env_file:
+      - ./docker/env/ai-agent-service.env
+    ports:
+      - "8001:8001"
+    networks:
+      - campus-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      milvus:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------
+  # frontend - Vue3 前端项目
+  # ---------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: campus-frontend
+    restart: unless-stopped
+    env_file:
+      - ./docker/env/frontend.env
+    ports:
+      - "5173:80"
+    networks:
+      - campus-network
+    depends_on:
+      - business-service
+      - ai-agent-service

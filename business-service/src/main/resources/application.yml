@@ -1,0 +1,108 @@
+# ===================================================================
+# business-service 主配置文件
+# 敏感配置统一通过环境变量注入（${ENV:default}），禁止硬编码
+# ===================================================================
+server:
+  port: ${SERVER_PORT:8080}
+  tomcat:
+    uri-encoding: UTF-8
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: business-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  servlet:
+    multipart:
+      # 上传大小限制：需大于业务层 5MB 校验，避免 MultipartResolver 提前拦截导致 400/500 语义不清
+      max-file-size: 6MB
+      max-request-size: 10MB
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:campus_recruit}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:123456}
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:123456}
+      database: ${REDIS_DATABASE:0}
+      timeout: 10s
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: -1ms
+
+# ---- MyBatis-Plus ----
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: com.campus.recruit.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    call-setters-on-nulls: true
+  global-config:
+    banner: false
+    db-config:
+      id-type: assign_id
+      logic-delete-field: isDeleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# ---- JWT ----
+jwt:
+  # HS256 要求密钥长度不小于 32 字节
+  secret: ${JWT_SECRET:campus-recruit-ai-platform-jwt-secret-key-please-change-in-production}
+  # 过期时间（秒），默认 24 小时
+  expiration: ${JWT_EXPIRATION:86400}
+  header: ${JWT_HEADER:Authorization}
+  prefix: ${JWT_PREFIX:Bearer }
+
+# ---- AI Agent 服务转发 ----
+ai:
+  service:
+    # AI 服务基础地址
+    base-url: ${AI_SERVICE_URL:http://localhost:8001}
+    # 内部访问令牌，必须与 AI 服务的 AI_INTERNAL_TOKEN 一致；生产用环境变量覆盖
+    internal-token: ${AI_INTERNAL_TOKEN:campus-recruit-internal-token}
+    # 连接超时（毫秒）
+    connect-timeout-ms: ${AI_CONNECT_TIMEOUT_MS:3000}
+    # 读取超时（毫秒），AI 深度推理单次可达 2 分钟以上；简历优化一次输出
+    # 诊断报告+完整优化稿+结果块耗时可达 8 分钟，SseEmitter 为绝对超时，
+    # 默认放宽到 10 分钟避免长生成被断流
+    read-timeout-ms: ${AI_READ_TIMEOUT_MS:600000}
+
+# ---- Knife4j / springdoc 接口文档 ----
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+
+# ---- 简历 PDF 上传目录（与 docker-compose 卷映射一致）----
+resume:
+  upload-dir: ${RESUME_UPLOAD_DIR:/app/uploads/resume}
+
+logging:
+  level:
+    root: info
+    com.campus.recruit: debug

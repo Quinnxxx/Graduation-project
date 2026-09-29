@@ -1,0 +1,251 @@
+/* ======================================================
+   全局基础样式
+   ====================================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family:
+    'PingFang SC',
+    'Microsoft YaHei',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Arial,
+    sans-serif;
+  font-size: 14px;
+  color: #1a1a1a;
+  background-color: #f5f5f5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 滚动条样式（Webkit 内核） */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d9d9d9;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #bfbfbf;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 页面通用容器 */
+.page-container {
+  padding: 16px;
+  background: #fff;
+  border-radius: 8px;
+}
+
+/* 文本溢出省略 */
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ======================================================
+   Markdown 渲染排版（.md-body，供 MdContent 组件 v-html 使用）
+   配色：深蓝 / 中性灰，简洁专业
+   ====================================================== */
+
+.md-body {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #1f2937;
+  word-break: break-word;
+}
+
+.md-body > *:first-child {
+  margin-top: 0;
+}
+
+.md-body > *:last-child {
+  margin-bottom: 0;
+}
+
+/* 标题 */
+.md-body h1,
+.md-body h2,
+.md-body h3,
+.md-body h4 {
+  margin: 1.2em 0 0.6em;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #111827;
+}
+
+.md-body h1 {
+  font-size: 1.5em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.md-body h2 {
+  font-size: 1.3em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid #eef0f3;
+}
+
+.md-body h3 {
+  font-size: 1.15em;
+}
+
+.md-body h4 {
+  font-size: 1em;
+}
+
+/* 段落 */
+.md-body p {
+  margin: 0.6em 0;
+  line-height: 1.7;
+}
+
+/* 列表 */
+.md-body ul,
+.md-body ol {
+  margin: 0.6em 0;
+  padding-left: 1.6em;
+}
+
+.md-body li {
+  margin: 0.25em 0;
+}
+
+.md-body li > ul,
+.md-body li > ol {
+  margin: 0.25em 0;
+}
+
+/* 链接 */
+.md-body a {
+  color: #1677ff;
+  text-decoration: none;
+}
+
+.md-body a:hover {
+  text-decoration: underline;
+}
+
+/* 引用块 */
+.md-body blockquote {
+  margin: 0.8em 0;
+  padding: 0.2em 0 0.2em 12px;
+  border-left: 4px solid #1677ff;
+  color: #6b7280;
+  background: transparent;
+}
+
+.md-body blockquote p {
+  margin: 0.3em 0;
+}
+
+/* 表格 */
+.md-body table {
+  width: 100%;
+  margin: 0.8em 0;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.md-body th,
+.md-body td {
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+.md-body th {
+  background-color: #f0f5ff;
+  color: #111827;
+  font-weight: 600;
+}
+
+.md-body tr:nth-child(2n) td {
+  background-color: #fafbfc;
+}
+
+/* 行内代码 */
+.md-body code {
+  padding: 0.15em 0.4em;
+  margin: 0 2px;
+  font-size: 0.9em;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  color: #0f172a;
+  background-color: #f1f5f9;
+  border-radius: 4px;
+}
+
+/* 代码块 */
+.md-body pre {
+  margin: 0.8em 0;
+  padding: 12px 14px;
+  overflow-x: auto;
+  background-color: #f6f8fa;
+  border: 1px solid #eef0f3;
+  border-radius: 8px;
+}
+
+.md-body pre code,
+.md-body pre code.hljs {
+  padding: 0;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #0f172a;
+  background-color: transparent;
+  border-radius: 0;
+}
+
+/* 分割线与图片 */
+.md-body hr {
+  margin: 1.2em 0;
+  border: none;
+  border-top: 1px solid #e5e7eb;
+}
+
+.md-body img {
+  max-width: 100%;
+}
+
+/* 流式生成闪烁光标：8px 宽深色竖线 */
+.md-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  background-color: #1f2937;
+  animation: md-cursor-blink 1s steps(1, end) infinite;
+}
+
+@keyframes md-cursor-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}

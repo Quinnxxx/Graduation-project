@@ -1,0 +1,48 @@
+# 容器数据卷（勿提交）
+volumes/
+
+# Java
+business-service/target/
+*.class
+*.jar
+
+# Python
+ai-agent-service/.venv/
+ai-agent-service/__pycache__/
+*.py[cod]
+
+# Node / Vue
+frontend/node_modules/
+frontend/dist/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 环境变量（含密钥，禁止提交；只提交 .env.example）
+.env
+*.env
+!*.env.example
+docker/env/*.env
+!docker/env/*.env.example
+
+# ==================== 个人 / 内部资料（不公开） ====================
+# 详细简历、项目包装素材（含个人隐私）
+docs/resume/
+# 内部批次开发提示词
+docs/prompts/
+# 个人学校文件（文件名含姓名）
+docs/夏权_广州商学院任务书.docx
+# 内部开发记忆档（含架构实录，且文中含真实密钥）
+doubao_memory.md
+
+# TRAE 数字分身技能（IDE/工具级配置，与 .idea/.vscode 同类）
+.trae/
+
+# Office 临时锁文件（~$xxx.docx）
+~$*

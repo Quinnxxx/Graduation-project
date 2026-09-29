@@ -1,0 +1,35 @@
+{
+  "name": "campus-recruit-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "campus-recruit-ai-platform frontend (Vue3 + TypeScript + Vite + Ant Design Vue)",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "type-check": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@ant-design/icons-vue": "^7.0.1",
+    "ant-design-vue": "^4.1.2",
+    "axios": "^1.6.8",
+    "echarts": "^6.1.0",
+    "highlight.js": "^11.12.0",
+    "json-bigint": "^1.0.0",
+    "markdown-it": "^15.0.2",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.21",
+    "vue-echarts": "^8.3.0",
+    "vue-router": "^4.3.0"
+  },
+  "devDependencies": {
+    "@types/json-bigint": "^1.0.4",
+    "@types/markdown-it": "^14.2.0",
+    "@types/node": "^20.12.7",
+    "@vitejs/plugin-vue": "^5.0.4",
+    "typescript": "^5.4.2",
+    "vite": "^5.2.0",
+    "vue-tsc": "^2.0.6"
+  }
+}
